@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="30" height="20" tilewidth="32" tileheight="32">
+ <tileset firstgid="1" name="grass-tiles-2-small" tilewidth="32" tileheight="32">
+  <image source="grass-tiles-2-small.png" width="384" height="192"/>
+ </tileset>
+ <tileset firstgid="73" name="tree2-final" tilewidth="32" tileheight="32">
+  <image source="tree2-final.png" trans="fff5f8" width="256" height="256"/>
+ </tileset>
+ <tileset firstgid="137" name="qubodup-bush_berries_0" tilewidth="32" tileheight="32">
+  <image source="qubodup-bush_berries_0.png" trans="fff5f8" width="32" height="32"/>
+ </tileset>
+ <layer name="Background" width="30" height="20">
+  <data encoding="base64" compression="zlib">
+   eJydlctqIzEQRdUNSRqS9pDYMOSxySKeIZBN984GeTn//0eRoA4+qTFZZHFRd0mqW28NpZRNw9qwNIwNc8j6f43vLj/Fub6+NNwEnmOf86t0rrGHniquzjNc0L1oZW8MZF5smwM11iV0D3F/CP2Wof+37rO3Cl3+Nzin5O9JvOisiZdYjOKo2h9jnfU9iveq4brhj/azb8T3NmRVOvBnE9++M+rebcrvfcODeLHPfhDrRbp9jlwTB/iwiXPUQ84vuh1fuKgrcj4k2SLf4LUNxGxVfl1XxKLfv0t6R3ERb+LhnI5Clvf1UM511eP9JuzT9z597785f+me0fO6bdjJb4B8F3Z1UIPTD/AqH3ehn3/bsBUn56hBdJET553adW90Wz+S/ukCp+3ZClPapz6ZX2tweua4LzZhw410EcenwGPgSavlj+VcV55xzETPac+3Q/Kp+3DUPjWN/fThknTSP/QKfeOe9tw6pFxPwTuL23o8n6q4NuVr/+Gr/Tzp7iHluqPXzXvDL+mwP3nGE+cqHmI0SGY7mVX0huvmWP5/m/JMZI5QU34j/Q55jjCb8ZE+plaP5TyTPPfhwnc4FnH67fQbju+ezfDZX8cTHX4fZ/ETG3iIbdWdVbzk1T2Jv5dy6reRtwJ+Yj2Xr/adtFeDF//yvPon/YN0OIc9Bp+KRT/g
+  </data>
+ </layer>
+ <layer name="Trunk" width="30" height="20" opacity="0.63">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUjIJRMJJANRDXAHEtne1tBuIWIG6ls72jYBQMBAAAfDcDAQ==
+  </data>
+ </layer>
+ <layer name="FireBugsKillngPoints" width="30" height="20">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgaoBOKh4K9Q8mtIwWMtDghxt7B7LZRewfO3MFq7ygYOmA0bUIAACWhEA8=
+  </data>
+ </layer>
+ <objectgroup name="KillingPoints" width="30" height="20">
+  <object x="192" y="192" width="64" height="96"/>
+  <object x="384" y="32" width="64" height="64"/>
+  <object x="800" y="64" width="64" height="64"/>
+  <object x="480" y="256" width="64" height="128"/>
+  <object x="224" y="384" width="64" height="64"/>
+  <object x="768" y="544" width="64" height="64"/>
+ </objectgroup>
+ <objectgroup name="CollisionAreas" width="30" height="20">
+  <object x="704" y="384" width="128" height="64"/>
+  <object x="487" y="106" width="50" height="43"/>
+  <object x="486" y="493" width="53" height="39"/>
+ </objectgroup>
+ <objectgroup name="Bugs" width="30" height="20">
+  <object x="109" y="195"/>
+  <object x="152" y="125"/>
+  <object x="169" y="443"/>
+  <object x="381" y="239"/>
+  <object x="732" y="55"/>
+  <object x="950" y="143"/>
+  <object x="453" y="356"/>
+  <object x="885" y="588"/>
+  <object x="335" y="586"/>
+  <object x="353" y="387"/>
+  <object x="555" y="317"/>
+  <object x="341" y="86"/>
+  <object x="168" y="337"/>
+  <object x="69" y="593"/>
+  <object x="184" y="570"/>
+  <object x="670" y="557"/>
+  <object x="801" y="275"/>
+  <object x="668" y="289"/>
+  <object x="612" y="72"/>
+  <object x="188" y="35"/>
+  <object x="276" y="503"/>
+  <object x="547" y="632"/>
+ </objectgroup>
+ <objectgroup name="FireBugs" width="30" height="20">
+  <object x="48" y="65">
+   <ellipse/>
+  </object>
+  <object x="61" y="362">
+   <ellipse/>
+  </object>
+  <object x="640" y="133">
+   <ellipse/>
+  </object>
+  <object x="725" y="522">
+   <ellipse/>
+  </object>
+  <object x="805" y="141">
+   <ellipse/>
+  </object>
+  <object x="524" y="441">
+   <ellipse/>
+  </object>
+  <object x="409" y="499">
+   <ellipse/>
+  </object>
+ </objectgroup>
+ <objectgroup name="Player" width="30" height="20">
+  <object name="player" x="64" y="512">
+   <ellipse/>
+  </object>
+ </objectgroup>
+ <layer name="Top" width="30" height="20" opacity="0.76">
+  <data encoding="base64" compression="zlib">
+   eJztzdtSAWAYQFGvRyKVKBQhOudYSeVUPLb1Al1+082/Z9b1zmRSqdRfZclxQJ5DChQ5CvyWOOaEU8qcUaEa+D3nghp1GlxyRTPw2+KaNh263NCjH/i95Y57HnjkiWdeAr8DhowYM2HKK2+B33dmfDDnky++WQR+l6xYs+GHX7bsAr+p1H+2BxyOGiE=
+  </data>
+ </layer>
+</map>
