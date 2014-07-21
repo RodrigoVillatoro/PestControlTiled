@@ -44,6 +44,7 @@ class GameViewController: UIViewController {
             scene.scaleMode = .AspectFill
             
             scene.level = 0
+            scene.levelTimeLimit = 1.0
             
             skView.presentScene(scene)
         }

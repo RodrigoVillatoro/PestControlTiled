@@ -33,14 +33,32 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var mapSizeInPixels = CGSize()
     var gameState: GameState!
     var level = Int()
+    var levelTimeLimit = Double()
+    var timerLabel = SKLabelNode()
+    var currentTime = Double()
+    var startTime = Double()
+    var elapsedTime = Double()
+    var won = Bool()
     
     init(coder aDecoder: NSCoder!) {
         super.init(coder: aDecoder);
     }
     
     init(size: CGSize, level: Int) {
+        
         super.init(size: size)
+        
         self.level = level
+        
+        if level == 0 {
+            levelTimeLimit = 25.0
+        } else if level == 1 {
+            levelTimeLimit = 50.0
+        } else if level > 1 {
+            self.level = 0
+            levelTimeLimit = 50.0
+        }
+        
     }
     
     override func didMoveToView(view: SKView) {
@@ -53,19 +71,29 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(worldNode)
         worldNode.addChild(map)
         
+        setupWorld()
+        createCollisionAreas()
+        createFireBugsKillingPoints()
+        spawnPlayer()
+        spawnBugs()
+        spawnFireBugs()
+        makeBugsWalk()
+        
+        createUserInterface()
+        gameState = GameState.StartingLevel
+        
+    }
+    
+    func setupWorld() {
         mapSizeInPixels = CGSizeMake(map.mapSize.width * map.tileSize.width, map.mapSize.height * map.tileSize.height)
         
         bounds.physicsBody = SKPhysicsBody(edgeLoopFromRect: CGRectMake(0, 0, mapSizeInPixels.width, mapSizeInPixels.height))
         bounds.physicsBody.categoryBitMask = PhysicsCategory.Boundary
         bounds.physicsBody.friction = 0
         map.addChild(bounds)
-        
-        createCollisionAreas()
-        createFireBugsKillingPoints()
-        spawnPlayer()
-        spawnBugs()
-        spawnFireBugs()
-        
+    }
+    
+    func makeBugsWalk() {
         worldNode.enumerateChildNodesWithName("bug", usingBlock: {
             node, stop in
             (node as Bugs).walk()
@@ -75,10 +103,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             node, stop in
             (node as FireBug).walk()
             })
-        
-        createUserInterface()
-        gameState = GameState.StartingLevel
-        
     }
     
     func tileRectFromTileCoords(tileCoords: CGPoint) -> CGRect {
@@ -193,6 +217,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func createUserInterface() {
+        
         let startMsg = SKLabelNode(fontNamed: "HelveticaNeue")
         startMsg.name = "msgLabel"
         startMsg.text = "Tap screen to run!!"
@@ -200,19 +225,41 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         startMsg.position = CGPointMake(self.size.width/2, self.size.height/2)
         addChild(startMsg)
         
+        timerLabel = SKLabelNode(fontNamed: "HelveticaNeue")
+        timerLabel.name = "timerLabel"
+        timerLabel.text = "Time remaining \(levelTimeLimit)"
+        timerLabel.fontSize = 18
+        timerLabel.position = CGPointMake(self.size.width - 90, self.size.height - 20)
+        addChild(timerLabel)
+        
+        timerLabel.hidden = true
+        
     }
     
     func endLevelWithSuccess(won: Bool) {
+        
+        self.won = won
+        
         let label = self.childNodeWithName("msgLabel") as SKLabelNode
+        
         label.text = won ? "You win!!!" : "Too slow!!!"
         label.hidden = false
         
-        let nextLevel = SKLabelNode(fontNamed: "HelveticaNeue")
-        nextLevel.name = "nextLevelLabel"
-        nextLevel.text = "Next level?"
-        nextLevel.fontSize = 24
-        nextLevel.position = CGPointMake(self.size.width/2, self.size.height/2 - 40)
-        addChild(nextLevel)
+        if won {
+            let nextLevel = SKLabelNode(fontNamed: "HelveticaNeue")
+            nextLevel.name = "nextLevelLabel"
+            nextLevel.text = "Next level?"
+            nextLevel.fontSize = 24
+            nextLevel.position = CGPointMake(self.size.width/2, self.size.height/2 - 40)
+            addChild(nextLevel)
+        } else {
+            let tryAgain = SKLabelNode(fontNamed: "HelveticaNeue")
+            tryAgain.name = "playAgain"
+            tryAgain.text = "Try again?"
+            tryAgain.fontSize = 24
+            tryAgain.position = CGPointMake(self.size.width/2, self.size.height/2 - 40)
+            addChild(tryAgain)
+        }
         
         player.physicsBody.linearDamping = 1
         gameState = GameState.InLevelMenu
@@ -254,20 +301,35 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 childNodeWithName("msgLabel").hidden = true
                 gameState = GameState.Playing
                 self.paused = false
+                timerLabel.hidden = false
+                startTime = currentTime
                 fallthrough
             case .Playing:
                 let location = touch.locationInNode(worldNode)
                 player.moveToward(location)
             case .InLevelMenu:
-//                println("hello!")
-                let location = touch.locationInNode(self)
-                let node = self.childNodeWithName("nextLevelLabel")
-                if node.containsPoint(location) {
-                    println("hello!!!")
+                if won {
                     ++level
                     let newScene = GameScene(size: self.size, level: level)
                     self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
+                } else {
+                    let newScene = GameScene(size: self.size, level: level)
+                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
                 }
+                
+//                
+//                let location = touch.locationInNode(self)
+//                var node = self.childNodeWithName("nextLevelLabel")
+//                if node.containsPoint(location) {
+//                    println("hello!!!")
+//                    ++level
+//                    let newScene = GameScene(size: self.size, level: level)
+//                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
+//                } else {
+//                    node = self.childNodeWithName("playAgain")
+//                    let newScene = GameScene(size: self.size, level: level)
+//                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
+//                }
             }
         }
     }
@@ -305,6 +367,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
    
     override func update(currentTime: CFTimeInterval) {
         
+        self.currentTime = currentTime
+        elapsedTime = currentTime - startTime
+        
         if gameState == GameState.StartingLevel && !self.paused {
             self.paused = true
         }
@@ -324,8 +389,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 })
             })
         
-        if !worldNode.childNodeWithName("bug") && !worldNode.childNodeWithName("firebug") {
+        if elapsedTime >= levelTimeLimit {
+            endLevelWithSuccess(false)
+            timerLabel.text = "Time remaining 0.0"
+        } else if !worldNode.childNodeWithName("bug") && !worldNode.childNodeWithName("firebug") {
             endLevelWithSuccess(true)
+        } else {
+            timerLabel.text = NSString(format: "Time remaining %2.1f", levelTimeLimit - elapsedTime)
         }
         
         
