@@ -18,6 +18,12 @@ enum PhysicsCategory {
     static let FireBug = 1 << 6 as UInt32       // 64
 }
 
+enum GameState {
+    case StartingLevel
+    case Playing
+    case InLevelMenu
+}
+
 class GameScene: SKScene, SKPhysicsContactDelegate {
 
     var worldNode = SKNode()
@@ -25,6 +31,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var map = JSTileMap(named: "level-4.tmx")
     var player = Player()
     var mapSizeInPixels = CGSize()
+    var gameState: GameState!
     
     override func didMoveToView(view: SKView) {
         
@@ -56,6 +63,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             node, stop in
             (node as FireBug).walk()
             })
+        
+        createUserInterface()
+        gameState = GameState.StartingLevel
+        
+        if gameState == .StartingLevel {
+            self.paused = true
+        }
+        
     }
     
     func tileRectFromTileCoords(tileCoords: CGPoint) -> CGRect {
@@ -169,6 +184,35 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    func createUserInterface() {
+        let startMsg = SKLabelNode(fontNamed: "HelveticaNeue")
+        startMsg.name = "msgLabel"
+        startMsg.text = "Tap screen to run!!"
+        startMsg.fontSize = 32
+        startMsg.position = CGPointMake(self.size.width/2, self.size.height/2)
+        addChild(startMsg)
+        
+    }
+    
+    func endLevelWithSuccess(won: Bool) {
+        let label = self.childNodeWithName("msgLabel") as SKLabelNode
+        label.text = won ? "You win!!!" : "Too slow!!!"
+        label.hidden = false
+        
+        let nextLevel = SKLabelNode(fontNamed: "HelveticaNeue")
+        nextLevel.name = "nextLevelLabel"
+        nextLevel.text = "Next level?"
+        nextLevel.fontSize = 24
+        nextLevel.position = CGPointMake(self.size.width/2, self.size.height/2 - 40)
+        addChild(nextLevel)
+        
+        player.physicsBody.linearDamping = 1
+        player.removeAllActions()
+        
+        gameState = GameState.InLevelMenu
+        
+    }
+    
     // For spawn points (without width and height)
     func spawnBugs() {
         let collisionsGroup = map.groupNamed("Bugs")
@@ -196,9 +240,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
   
     override func touchesBegan(touches: NSSet, withEvent event: UIEvent!) {
+        
         for touch : AnyObject in touches {
-            let location = touch.locationInNode(worldNode)
-            player.moveToward(location)
+            
+            switch gameState! {
+            case .StartingLevel:
+                childNodeWithName("msgLabel").hidden = true
+                gameState = GameState.Playing
+                self.paused = false
+                fallthrough
+            case .Playing:
+                let location = touch.locationInNode(worldNode)
+                player.moveToward(location)
+            case .InLevelMenu:
+                println("hello")
+            }
         }
     }
     
@@ -235,6 +291,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
    
     override func update(currentTime: CFTimeInterval) {
         
+        if gameState != GameState.Playing {
+            return
+        }
+        
         // Check if FireBug is in Killing Point, if so, remove from Parent
         worldNode.enumerateChildNodesWithName("someObstacle", usingBlock: {
             node, stop in
@@ -245,6 +305,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
                 })
             })
+        
+        if !worldNode.childNodeWithName("bug") && !worldNode.childNodeWithName("firebug") {
+            endLevelWithSuccess(true)
+        }
         
         
     }
