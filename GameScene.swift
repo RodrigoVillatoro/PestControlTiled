@@ -28,15 +28,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     var worldNode = SKNode()
     var bounds = SKNode()
-    var map = JSTileMap(named: "level-4.tmx")
+    var map: JSTileMap!
     var player = Player()
     var mapSizeInPixels = CGSize()
     var gameState: GameState!
+    var level = Int()
+    
+    init(coder aDecoder: NSCoder!) {
+        super.init(coder: aDecoder);
+    }
+    
+    init(size: CGSize, level: Int) {
+        super.init(size: size)
+        self.level = level
+    }
     
     override func didMoveToView(view: SKView) {
         
         self.physicsWorld.gravity = CGVectorMake(0, 0)
         self.physicsWorld.contactDelegate = self
+        
+        map = JSTileMap(named: "level-\(level).tmx")
         
         addChild(worldNode)
         worldNode.addChild(map)
@@ -66,10 +78,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         createUserInterface()
         gameState = GameState.StartingLevel
-        
-        if gameState == .StartingLevel {
-            self.paused = true
-        }
         
     }
     
@@ -207,8 +215,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(nextLevel)
         
         player.physicsBody.linearDamping = 1
-        player.removeAllActions()
-        
         gameState = GameState.InLevelMenu
         
     }
@@ -253,7 +259,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 let location = touch.locationInNode(worldNode)
                 player.moveToward(location)
             case .InLevelMenu:
-                println("hello")
+//                println("hello!")
+                let location = touch.locationInNode(self)
+                let node = self.childNodeWithName("nextLevelLabel")
+                if node.containsPoint(location) {
+                    println("hello!!!")
+                    ++level
+                    let newScene = GameScene(size: self.size, level: level)
+                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
+                }
             }
         }
     }
@@ -290,6 +304,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
    
     override func update(currentTime: CFTimeInterval) {
+        
+        if gameState == GameState.StartingLevel && !self.paused {
+            self.paused = true
+        }
         
         if gameState != GameState.Playing {
             return

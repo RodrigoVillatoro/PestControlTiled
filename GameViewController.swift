@@ -43,6 +43,8 @@ class GameViewController: UIViewController {
             scene.size = skView.bounds.size
             scene.scaleMode = .AspectFill
             
+            scene.level = 0
+            
             skView.presentScene(scene)
         }
     }
