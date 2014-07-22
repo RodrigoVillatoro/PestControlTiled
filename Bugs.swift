@@ -42,6 +42,8 @@ class Bugs: AnimatedSprite {
         
         self.initializeAnimations()
         
+        
+        
     }
     
     func faceCurrentDirection() {

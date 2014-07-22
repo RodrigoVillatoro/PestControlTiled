@@ -39,6 +39,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var startTime = Double()
     var elapsedTime = Double()
     var won = Bool()
+    let smoke = SKEmitterNode()
     
     init(coder aDecoder: NSCoder!) {
         super.init(coder: aDecoder);
@@ -53,11 +54,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if level == 0 {
             levelTimeLimit = 25.0
         } else if level == 1 {
-            levelTimeLimit = 50.0
+            levelTimeLimit = 100.0
         } else if level > 1 {
             self.level = 0
-            levelTimeLimit = 50.0
+            levelTimeLimit = 15.0
         }
+        
+        smoke = NSKeyedUnarchiver.unarchiveObjectWithFile(NSBundle.mainBundle().pathForResource("Smoke", ofType: "sks")) as SKEmitterNode
+        smoke.position = CGPointMake(0, 0)
+        smoke.name = "Smoke"
         
     }
     
@@ -344,8 +349,36 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if contact.bodyA.categoryBitMask == PhysicsCategory.Player || contact.bodyB.categoryBitMask == PhysicsCategory.Player {
             let other = contact.bodyA.categoryBitMask == PhysicsCategory.Player ? contact.bodyB : contact.bodyA
             if other.categoryBitMask == PhysicsCategory.Bug {
-                other.node.removeFromParent()
+                
+                let upAction = SKAction.moveByX(0.0, y: 30.0, duration: 0.2)
+                upAction.timingMode = SKActionTimingMode.EaseOut
+                let downAction = SKAction.moveByX(0.0, y: -300.0, duration: 0.8)
+                downAction.timingMode = SKActionTimingMode.EaseIn
+                other.node.runAction(SKAction.sequence([upAction, downAction, SKAction.removeFromParent()]))
+                
+                let direction = randomPositiveOrNegative()
+                let horizontalAction = SKAction.moveByX(100.0 * CGFloat(direction), y: 0.0, duration: 1.0)
+                other.node.runAction(horizontalAction)
+                
+                let rotateAction = SKAction.rotateByAngle(-CGFloat(M_PI_4) * 2.0, duration: 1.0)
+                other.node.runAction(rotateAction)
+                
+                other.node.xScale = 1.5
+                other.node.yScale = 1.5
+                let scaleAction = SKAction.scaleTo(0.4, duration: 1.0)
+                scaleAction.timingMode = SKActionTimingMode.EaseOut
+                other.node.runAction(scaleAction)
+                
+                other.node.runAction(SKAction.sequence([SKAction.waitForDuration(0.6), SKAction.fadeOutWithDuration(0.4)]))
+                
+            } else if other.categoryBitMask == PhysicsCategory.FireBug {
+                
+                let scaleUp = SKAction.scaleTo(1.2, duration: 0.1)
+                let scaleDown = SKAction.scaleTo(1.0, duration: 0.1)
+                other.node.runAction(SKAction.repeatAction(SKAction.sequence([scaleUp, scaleDown]), count: 5))
             }
+            
+            
         } else if contact.bodyA.categoryBitMask == PhysicsCategory.KillingPoint || contact.bodyB.categoryBitMask == PhysicsCategory.KillingPoint {
             let other = contact.bodyA.categoryBitMask == PhysicsCategory.KillingPoint ? contact.bodyB : contact.bodyA
             if other.categoryBitMask == PhysicsCategory.FireBug {
@@ -378,13 +411,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             return
         }
         
-        // Check if FireBug is in Killing Point, if so, remove from Parent
+        // Check if FireBug is in Killing Point, if so, rotate and remove from Parent
         worldNode.enumerateChildNodesWithName("someObstacle", usingBlock: {
             node, stop in
             self.worldNode.enumerateChildNodesWithName("firebug", usingBlock: {
                 anotherNode, stop in
                 if anotherNode.intersectsNode(node) {
-                    anotherNode.runAction(SKAction.sequence([SKAction.scaleTo(0.0, duration: 0.3), SKAction.removeFromParent()]))
+                    anotherNode.runAction(SKAction.sequence([SKAction.group([SKAction.rotateByAngle(4 * CGFloat(M_PI_4), duration: 1.0), SKAction.scaleTo(0.0, duration: 1.0)]),SKAction.removeFromParent()]))
                 }
                 })
             })

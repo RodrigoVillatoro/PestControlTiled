@@ -66,3 +66,16 @@ func randomNumberBetween(minNum: CGFloat, maxNum: CGFloat) -> CGFloat {
     let randomNumber = CGFloat(arc4random())
     return randomNumber % (maxNum - minNum + 1) + minNum
 }
+
+func randomPositiveOrNegative() -> Int {
+    let number = Int(arc4random() % 2)
+    return number == 0 ? -1 : 1
+}
+
+
+
+
+
+
+
+

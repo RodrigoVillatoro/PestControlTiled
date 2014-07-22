@@ -23,6 +23,11 @@ class FireBug: Bugs {
         self.colorBlendFactor = 0.45
         self.name = "firebug"
 
+        let burnBugs = NSKeyedUnarchiver.unarchiveObjectWithFile(NSBundle.mainBundle().pathForResource("BurnBugs", ofType: "sks")) as SKEmitterNode
+        burnBugs.position = CGPointMake(0, 0)
+        burnBugs.name = "BurnBugs"
+        self.addChild(burnBugs)
+        
     }
     
     
