@@ -123,27 +123,31 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         return NSInteger(layerInfo.tileGidAtCoord(coord))
     }
     
-    func centerCameraOnPlayer() {
+    func worldTargetPosition() -> CGPoint {
+        
+        var somePosition = CGPoint()
         
         // Center camera on X
         if player.position.x < self.size.width/2 {
-            worldNode.position.x = 0.0
+            somePosition.x = 0.0
         } else if player.position.x >= self.size.width/2 {
-            worldNode.position.x = -player.position.x + self.size.width/2
+            somePosition.x = -player.position.x + self.size.width/2
             if player.position.x > mapSizeInPixels.width - self.size.width/2 {
-                worldNode.position.x = -mapSizeInPixels.width + self.size.width
+                somePosition.x = -mapSizeInPixels.width + self.size.width
             }
         }
         
         // Center camera on Y
         if player.position.y < self.size.height/2 {
-            worldNode.position.y = 0.0
+            somePosition.y = 0.0
         } else if player.position.y >= self.size.height/2 {
-            worldNode.position.y = -player.position.y + self.size.height/2
+            somePosition.y = -player.position.y + self.size.height/2
             if player.position.y > mapSizeInPixels.height - self.size.height/2 {
-                worldNode.position.y = -mapSizeInPixels.height + self.size.height
+                somePosition.y = -mapSizeInPixels.height + self.size.height
             }
         }
+        
+        return somePosition
         
     }
     
@@ -344,8 +348,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func didSimulatePhysics() {
-        centerCameraOnPlayer()
+        var target = worldTargetPosition()
         
+        var newPosition = worldNode.position
+        newPosition.x += (target.x - worldNode.position.x) * 0.1
+        newPosition.y += (target.y - worldNode.position.y) * 0.1
+        
+        worldNode.position = newPosition
     }
     
     func didBeginContact(contact: SKPhysicsContact) {
