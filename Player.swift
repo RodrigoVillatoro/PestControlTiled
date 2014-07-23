@@ -32,7 +32,7 @@ class Player: AnimatedSprite {
         self.physicsBody.linearDamping = 0
         self.physicsBody.categoryBitMask = PhysicsCategory.Player
         self.physicsBody.contactTestBitMask = 0xFFFFFFFF
-        self.physicsBody.collisionBitMask = PhysicsCategory.Boundary | PhysicsCategory.Tree | PhysicsCategory.KillingPoint | PhysicsCategory.FireBug // 89
+        self.physicsBody.collisionBitMask = PhysicsCategory.Boundary | PhysicsCategory.Tree | PhysicsCategory.KillingPoint | PhysicsCategory.FireBug | PhysicsCategory.Mushroom
         
         self.facingForwardAnim = createAnimWith("player", suffix: "ft")
         self.facingBackAnim = createAnimWith("player", suffix: "bk")

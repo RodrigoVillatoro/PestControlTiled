@@ -16,6 +16,7 @@ enum PhysicsCategory {
     static let KillingPoint = 1 << 4 as UInt32  // 16
     static let Breakable = 1 << 5 as UInt32     // 32
     static let FireBug = 1 << 6 as UInt32       // 64
+    static let Mushroom = 1 << 7 as UInt32      // 128
 }
 
 enum GameState {
@@ -82,6 +83,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         spawnPlayer()
         spawnBugs()
         spawnFireBugs()
+        createMushrooms()
         makeBugsWalk()
         
         createUserInterface()
@@ -156,16 +158,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             let width = collisionObject.objectForKey("width") as String
             let height = collisionObject.objectForKey("height") as String
-            let someObstacleSize = CGSize(width: CGFloat(width.toInt()!) * 0.50, height: CGFloat(height.toInt()!) * 0.50)
+            let someObstacleSize = CGSize(width: CGFloat(width.toInt()!) * 0.50, height: CGFloat(height.toInt()!) * 0.75)
             
-            let someObstacle = SKSpriteNode(color: UIColor.clearColor(), size: someObstacleSize);
+            let someObstacle = SKSpriteNode(color: UIColor.clearColor(), size: someObstacleSize)
             
-            let y = collisionObject.objectForKey("y") as Int;
-            let x = collisionObject.objectForKey("x") as Int;
+            let y = collisionObject.objectForKey("y") as Int
+            let x = collisionObject.objectForKey("x") as Int
             
-            someObstacle.position = CGPoint(x: x + width.toInt()!/2, y: y + height.toInt()!/2);
-            someObstacle.physicsBody = SKPhysicsBody(rectangleOfSize: someObstacleSize);
-            someObstacle.physicsBody.affectedByGravity = false;
+            someObstacle.position = CGPoint(x: x + width.toInt()!/2, y: y + height.toInt()!/2)
+            someObstacle.physicsBody = SKPhysicsBody(rectangleOfSize: someObstacleSize)
+            someObstacle.physicsBody.affectedByGravity = false
             someObstacle.physicsBody.categoryBitMask = PhysicsCategory.KillingPoint
             someObstacle.physicsBody.dynamic = false
             someObstacle.physicsBody.friction = 0
@@ -190,14 +192,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let height = collisionObject.objectForKey("height") as String
             let someObstacleSize = CGSize(width: width.toInt()!, height: height.toInt()!)
             
-            let someObstacle = SKSpriteNode(color: UIColor.clearColor(), size: someObstacleSize);
+            let someObstacle = SKSpriteNode(color: UIColor.clearColor(), size: someObstacleSize)
             
-            let y = collisionObject.objectForKey("y") as Int;
-            let x = collisionObject.objectForKey("x") as Int;
+            let y = collisionObject.objectForKey("y") as Int
+            let x = collisionObject.objectForKey("x") as Int
             
-            someObstacle.position = CGPoint(x: x + width.toInt()!/2, y: y + height.toInt()!/2);
-            someObstacle.physicsBody = SKPhysicsBody(rectangleOfSize: someObstacleSize);
-            someObstacle.physicsBody.affectedByGravity = false;
+            someObstacle.position = CGPoint(x: x + width.toInt()!/2, y: y + height.toInt()!/2)
+            someObstacle.physicsBody = SKPhysicsBody(rectangleOfSize: someObstacleSize)
+            someObstacle.physicsBody.affectedByGravity = false
             someObstacle.physicsBody.categoryBitMask = PhysicsCategory.Tree
             someObstacle.physicsBody.dynamic = false
             someObstacle.physicsBody.friction = 0
@@ -206,8 +208,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             map.addChild(someObstacle)
             
         }
-        
     }
+    
+    // For spawn points (without width and height)
+    func createMushrooms() {
+        let collisionsGroup = map.groupNamed("Mushrooms")
+        for (var i = 0; i < collisionsGroup.objects.count; ++i) {
+            let collisionObject = collisionsGroup.objects.objectAtIndex(i) as NSDictionary
+            let y = collisionObject.objectForKey("y") as Int
+            let x = collisionObject.objectForKey("x") as Int
+            let shrooms = Mushroom()
+            let width = shrooms.size.width
+            let height = shrooms.size.height
+            shrooms.position = CGPointMake(CGFloat(x) + width/2, CGFloat(y) + height/2)
+            worldNode.addChild(shrooms)
+        }
+    }
+    
     
     // For spawn points (without width and height)
     func spawnPlayer() {
@@ -284,6 +301,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    
     // For spawn points (without width and height)
     func spawnFireBugs() {
         let collisionsGroup = map.groupNamed("FireBugs")
@@ -321,20 +339,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     let newScene = GameScene(size: self.size, level: level)
                     self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
                 }
-                
-//                
-//                let location = touch.locationInNode(self)
-//                var node = self.childNodeWithName("nextLevelLabel")
-//                if node.containsPoint(location) {
-//                    println("hello!!!")
-//                    ++level
-//                    let newScene = GameScene(size: self.size, level: level)
-//                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
-//                } else {
-//                    node = self.childNodeWithName("playAgain")
-//                    let newScene = GameScene(size: self.size, level: level)
-//                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
-//                }
             }
         }
     }
@@ -376,6 +380,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 let scaleUp = SKAction.scaleTo(1.2, duration: 0.1)
                 let scaleDown = SKAction.scaleTo(1.0, duration: 0.1)
                 other.node.runAction(SKAction.repeatAction(SKAction.sequence([scaleUp, scaleDown]), count: 5))
+            } else if other.categoryBitMask == PhysicsCategory.Mushroom {
+                self.scaleMushroom(other.node)
             }
             
             
@@ -396,6 +402,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.faceCurrentDirection()
             player.defineFacingDirection(player.facingDirection)
         }
+    }
+    
+    func scaleMushroom(node: SKNode) {
+        node.xScale = 1.2
+        node.yScale = node.xScale
+        let action = SKAction.scaleTo(1.0, duration: 1.2)
+        action.timingMode = SKActionTimingMode.EaseOut
+        node.runAction(action, withKey: "scaling")
     }
    
     override func update(currentTime: CFTimeInterval) {

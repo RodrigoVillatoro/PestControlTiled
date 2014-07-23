@@ -17,6 +17,28 @@
    eJytVTlyBCEQA1Kb+YHttTOfAZPD/3/lDlpVWrlhCByomOFo9SXIKaXDcBpygOpjMQzaVxyZ/puh+x7YPH2t+1z2uUa23w0fYvcQ3jLhVWC90dwgXszdDK+GN8OL8x1+lmOe5QVg39UH8HJ+vwzfhh/D5yIG5L4G6+o79iKG4fkucv7J8HwRzwor35vzDufUGqGmGLmXdhD5Do4uNdP1B+I90n1+9cwMj4taFbGjPpQU17SkeY2vtMgaufKJoTHXALPeizRShfdI970Y+VNpz46m2SZ6pgt3DezyWeZWvfD+SM/ob3yfwgtfNAatdRbumZ45li7n8D3ITkt//VUN7Oi5bdhEDaJ17aEVt+qZ34erWHbeqh09wdYpeY6AvohqzD220i76nP3H2xjFdEt/7/n/AuJtQd533qirfDYf0afQCO5+vkcY6AvVyAys4UH80AjGQjZR7yr+DVrDenQvom6wn8kG+rh7Dn4BoLIexQ==
   </data>
  </layer>
+ <layer name="Mushrooms" width="30" height="20" visible="0" opacity="0.35">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUkAu6Ru0dtXfU3lF7R8EowAIAqQwE2w==
+  </data>
+ </layer>
+ <objectgroup name="Mushrooms" width="30" height="20">
+  <object name="mushrooms" x="896" y="192" width="32" height="32"/>
+  <object name="mushrooms" x="896" y="224" width="32" height="32"/>
+  <object name="mushrooms" x="896" y="256" width="32" height="32"/>
+  <object name="mushrooms" x="896" y="288" width="32" height="32"/>
+  <object name="mushrooms" x="896" y="320" width="32" height="32"/>
+  <object name="mushrooms" x="896" y="352" width="32" height="32"/>
+  <object name="mushrooms" x="896" y="384" width="32" height="32"/>
+  <object name="mushrooms" x="896" y="416" width="32" height="32"/>
+  <object name="mushrooms" x="896" y="448" width="32" height="32"/>
+  <object name="mushrooms" x="576" y="128" width="32" height="32"/>
+  <object name="mushrooms" x="544" y="128" width="32" height="32"/>
+  <object name="mushrooms" x="512" y="128" width="32" height="32"/>
+  <object name="mushrooms" x="608" y="128" width="32" height="32"/>
+  <object name="mushrooms" x="640" y="128" width="32" height="32"/>
+  <object name="mushrooms" x="672" y="128" width="32" height="32"/>
+ </objectgroup>
  <layer name="Trunk" width="30" height="20" visible="0" opacity="0.63">
   <data encoding="base64" compression="zlib">
    eJxjYBgFo2AUjIJRMJJANRDXAHEtne1tBuIWIG6ls72jYBQMBAAAfDcDAQ==
