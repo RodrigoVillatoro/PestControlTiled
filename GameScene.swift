@@ -25,6 +25,13 @@ enum GameState {
     case InLevelMenu
 }
 
+enum Side: Int {
+    case Right
+    case Top
+    case Left
+    case Bottom
+}
+
 class GameScene: SKScene, SKPhysicsContactDelegate {
 
     var worldNode = SKNode()
@@ -121,6 +128,49 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func tileGIDAtTileCoord(coord: CGPoint, layer:TMXLayer) -> NSInteger {
         let layerInfo = layer.layerInfo
         return NSInteger(layerInfo.tileGidAtCoord(coord))
+    }
+    
+    func sideForCollisionsWithNode(node: SKNode) -> Side {
+        let diff = CGPointSubtract(node.position, player.position)
+        let angle = CGPointToAngle(diff)
+        if angle > -CGFloat(M_PI_4) && angle <= CGFloat(M_PI_4) {
+            return Side.Right
+        } else if angle > CGFloat(M_PI_4) && angle <= 3.0 * CGFloat(M_PI_4) {
+            return Side.Top
+        } else if angle <= -CGFloat(M_PI_4) && angle > -3.0 * CGFloat(M_PI_4) {
+            return Side.Bottom
+        } else {
+            return Side.Left
+        }
+    }
+    
+    func moveMushrooms(node: SKNode, side: Side) {
+        if node.actionForKey("moving") == nil {
+            
+            // first four numbers represent Xs, last four numbers represent Ys
+            let offsets = [4.0, 0.0, -4.0, 0.0, 0.0, 4.0, 0.0, -4.0]
+            
+            let x = side.toRaw()
+            let y = side.toRaw() + 4
+            
+            let oldPositon = node.position
+            var offset = CGPoint(x: CGFloat(offsets[x]), y: CGFloat(offsets[y]))
+            let newPosition = CGPointAdd(node.position, offset)
+            let moveEffect = SKAction.moveTo(newPosition, duration: 0.3)
+            let moveBack = SKAction.moveTo(oldPositon, duration: 0.3)
+            node.runAction(SKAction.sequence([moveEffect, moveBack]), withKey: "moving")
+        }
+    }
+    
+    func scaleMushroom(node: SKNode) {
+        node.xScale = 1.2
+        node.yScale = node.xScale
+        let action = SKAction.scaleTo(1.0, duration: 1.2)
+        action.timingMode = SKActionTimingMode.EaseOut
+        node.runAction(action, withKey: "scaling")
+        
+        let side = sideForCollisionsWithNode(node)
+        self.moveMushrooms(node, side: side)
     }
     
     func worldTargetPosition() -> CGPoint {
@@ -411,14 +461,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.faceCurrentDirection()
             player.defineFacingDirection(player.facingDirection)
         }
-    }
-    
-    func scaleMushroom(node: SKNode) {
-        node.xScale = 1.2
-        node.yScale = node.xScale
-        let action = SKAction.scaleTo(1.0, duration: 1.2)
-        action.timingMode = SKActionTimingMode.EaseOut
-        node.runAction(action, withKey: "scaling")
     }
    
     override func update(currentTime: CFTimeInterval) {
