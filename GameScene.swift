@@ -266,16 +266,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     // For spawn points (without width and height)
     func createMushrooms() {
-        let collisionsGroup = map.groupNamed("Mushrooms")
-        for (var i = 0; i < collisionsGroup.objects.count; ++i) {
-            let collisionObject = collisionsGroup.objects.objectAtIndex(i) as NSDictionary
-            let y = collisionObject.objectForKey("y") as Int
-            let x = collisionObject.objectForKey("x") as Int
-            let shrooms = Mushroom()
-            let width = shrooms.size.width
-            let height = shrooms.size.height
-            shrooms.position = CGPointMake(CGFloat(x) + width/2, CGFloat(y) + height/2)
-            worldNode.addChild(shrooms)
+        if map.groupNamed("Mushrooms") != nil {
+            let collisionsGroup = map.groupNamed("Mushrooms")
+            for (var i = 0; i < collisionsGroup.objects.count; ++i) {
+                let collisionObject = collisionsGroup.objects.objectAtIndex(i) as NSDictionary
+                let y = collisionObject.objectForKey("y") as Int
+                let x = collisionObject.objectForKey("x") as Int
+                let shrooms = Mushroom()
+                let width = shrooms.size.width
+                let height = shrooms.size.height
+                shrooms.position = CGPointMake(CGFloat(x) + width/2, CGFloat(y) + height/2)
+                worldNode.addChild(shrooms)
+            }
         }
     }
     
