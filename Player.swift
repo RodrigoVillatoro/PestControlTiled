@@ -12,6 +12,7 @@ class Player: AnimatedSprite {
     
     let PLAYER_MOVES_PER_SEC = 320.0 as CGFloat
     var playerVelocity = CGPoint()
+    var trail = SKEmitterNode()
     
     init() {
     
@@ -70,6 +71,13 @@ class Player: AnimatedSprite {
         
         self.facingDirection = facingDir
         
+    }
+    
+    func startTrail() {
+        trail = NSKeyedUnarchiver.unarchiveObjectWithFile(NSBundle.mainBundle().pathForResource("PlayerTrail", ofType: "sks")) as SKEmitterNode
+        trail.targetNode = self.parent
+        trail.name = "Trail"
+        self.addChild(trail)
     }
     
 }

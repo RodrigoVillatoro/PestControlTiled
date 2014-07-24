@@ -34,6 +34,7 @@ enum Side: Int {
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
 
+    var screenNode = SKNode()
     var worldNode = SKNode()
     var bounds = SKNode()
     var map: JSTileMap!
@@ -47,7 +48,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var startTime = Double()
     var elapsedTime = Double()
     var won = Bool()
-    let smoke = SKEmitterNode()
+    
+    // Sounds
+    var hitMushroomSound = SKAction()
+    var hitTreeSound = SKAction()
+    var hitFireBugSound = SKAction()
+    var playerMoveSound = SKAction()
+    var clockSound = SKAction()
+    var winSound = SKAction()
+    var loseSound = SKAction()
+    var drownFireBugSound = SKAction()
+    var killBugsSound = SKAction[]()
+    
     
     init(coder aDecoder: NSCoder!) {
         super.init(coder: aDecoder);
@@ -68,10 +80,52 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             levelTimeLimit = 15.0
         }
         
-        smoke = NSKeyedUnarchiver.unarchiveObjectWithFile(NSBundle.mainBundle().pathForResource("Smoke", ofType: "sks")) as SKEmitterNode
+    }
+    
+    func loadSounds() {
+        hitMushroomSound = SKAction.playSoundFileNamed("HitWall.mp3", waitForCompletion: false)
+        hitTreeSound = SKAction.playSoundFileNamed("HitTree.mp3", waitForCompletion: false)
+        hitFireBugSound = SKAction.playSoundFileNamed("HitFireBug.mp3", waitForCompletion: false)
+        playerMoveSound = SKAction.playSoundFileNamed("PlayerMove.mp3", waitForCompletion: false)
+        clockSound = SKAction.playSoundFileNamed("TickTock.mp3", waitForCompletion: true)
+        winSound = SKAction.playSoundFileNamed("Win.mp3", waitForCompletion: false)
+        loseSound = SKAction.playSoundFileNamed("Lose.mp3", waitForCompletion: false)
+        drownFireBugSound = SKAction.playSoundFileNamed("DrownFireBug.mp3", waitForCompletion: false)
+        
+        for var t = 0; t < 12; ++t {
+            let someKillBugsSound = SKAction.playSoundFileNamed("KillBug-\(t+1).mp3", waitForCompletion: false)
+            killBugsSound.append(someKillBugsSound)
+        }
+        
+    }
+    
+    // Emitter Node Functions
+    
+    func dropLeaves() -> SKEmitterNode {
+        let leaves = NSKeyedUnarchiver.unarchiveObjectWithFile(NSBundle.mainBundle().pathForResource("TreeSmash", ofType: "sks")) as SKEmitterNode
+        leaves.position = CGPointMake(0, 0)
+        leaves.name = "Leaves"
+        return leaves
+    }
+    
+    func burnPlayer() -> SKEmitterNode {
+        let smoke = NSKeyedUnarchiver.unarchiveObjectWithFile(NSBundle.mainBundle().pathForResource("FirebugSmoke", ofType: "sks")) as SKEmitterNode
         smoke.position = CGPointMake(0, 0)
         smoke.name = "Smoke"
-        
+        return smoke
+    }
+    
+    func sparkFireBug() -> SKEmitterNode {
+        let spark = NSKeyedUnarchiver.unarchiveObjectWithFile(NSBundle.mainBundle().pathForResource("FirebugSparks", ofType: "sks")) as SKEmitterNode
+        spark.position = CGPointMake(0, 0)
+        spark.name = "Smoke"
+        return spark
+    }
+    
+    func waitThenRemove(emitterNode: SKEmitterNode, duration: NSTimeInterval) {
+        let actionWait = SKAction.waitForDuration(duration)
+        let actionRemove = SKAction.removeFromParent()
+        emitterNode.runAction(SKAction.sequence([actionWait, actionRemove]))
     }
     
     override func didMoveToView(view: SKView) {
@@ -81,7 +135,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         map = JSTileMap(named: "level-\(level).tmx")
         
-        addChild(worldNode)
+        addChild(screenNode)
+        
+        screenNode.addChild(worldNode)
         worldNode.addChild(map)
         
         setupWorld()
@@ -92,6 +148,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         spawnFireBugs()
         createMushrooms()
         makeBugsWalk()
+        loadSounds()
         
         createUserInterface()
         gameState = GameState.StartingLevel
@@ -382,10 +439,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 self.paused = false
                 timerLabel.hidden = false
                 startTime = currentTime
+                player.startTrail()
                 fallthrough
             case .Playing:
                 let location = touch.locationInNode(worldNode)
                 player.moveToward(location)
+                player.runAction(playerMoveSound)
             case .InLevelMenu:
                 if won {
                     ++level
@@ -409,39 +468,75 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         worldNode.position = newPosition
     }
     
+    func shakeScreenCollisions() {
+        
+        let moveSome = SKAction.moveByX(3, y: 1, duration: 0.05)
+        let returnMove = SKAction.reversedAction(moveSome)
+        let sequence = SKAction.sequence([moveSome, returnMove()])
+        
+        screenNode.runAction(SKAction.repeatAction(sequence, count: 2))
+        
+    }
+    
+    func hitBugEffect(someNode: SKNode) {
+    
+        let upAction = SKAction.moveByX(0.0, y: 30.0, duration: 0.2)
+        upAction.timingMode = SKActionTimingMode.EaseOut
+        let downAction = SKAction.moveByX(0.0, y: -300.0, duration: 0.8)
+        downAction.timingMode = SKActionTimingMode.EaseIn
+        someNode.runAction(SKAction.sequence([upAction, downAction, SKAction.removeFromParent()]))
+        
+        let direction = randomPositiveOrNegative()
+        let horizontalAction = SKAction.moveByX(100.0 * CGFloat(direction), y: 0.0, duration: 1.0)
+        someNode.runAction(horizontalAction)
+        
+        let rotateAction = SKAction.rotateByAngle(-CGFloat(M_PI_4) * 2.0, duration: 1.0)
+        someNode.runAction(rotateAction)
+        
+        someNode.xScale = 1.5
+        someNode.yScale = 1.5
+        let scaleAction = SKAction.scaleTo(0.4, duration: 1.0)
+        scaleAction.timingMode = SKActionTimingMode.EaseOut
+        someNode.runAction(scaleAction)
+        
+        someNode.runAction(SKAction.sequence([SKAction.waitForDuration(0.6), SKAction.fadeOutWithDuration(0.4)]))
+        
+        (someNode as SKSpriteNode).color = SKColor(red: 128/255, green: 128/255, blue: 128/255, alpha: 1)
+        (someNode as SKSpriteNode).colorBlendFactor = 1.0
+        
+        shakeScreenCollisions()
+        
+    }
+    
     func didBeginContact(contact: SKPhysicsContact) {
         
         if contact.bodyA.categoryBitMask == PhysicsCategory.Player || contact.bodyB.categoryBitMask == PhysicsCategory.Player {
             let other = contact.bodyA.categoryBitMask == PhysicsCategory.Player ? contact.bodyB : contact.bodyA
+            
             if other.categoryBitMask == PhysicsCategory.Bug {
                 
-                let upAction = SKAction.moveByX(0.0, y: 30.0, duration: 0.2)
-                upAction.timingMode = SKActionTimingMode.EaseOut
-                let downAction = SKAction.moveByX(0.0, y: -300.0, duration: 0.8)
-                downAction.timingMode = SKActionTimingMode.EaseIn
-                other.node.runAction(SKAction.sequence([upAction, downAction, SKAction.removeFromParent()]))
-                
-                let direction = randomPositiveOrNegative()
-                let horizontalAction = SKAction.moveByX(100.0 * CGFloat(direction), y: 0.0, duration: 1.0)
-                other.node.runAction(horizontalAction)
-                
-                let rotateAction = SKAction.rotateByAngle(-CGFloat(M_PI_4) * 2.0, duration: 1.0)
-                other.node.runAction(rotateAction)
-                
-                other.node.xScale = 1.5
-                other.node.yScale = 1.5
-                let scaleAction = SKAction.scaleTo(0.4, duration: 1.0)
-                scaleAction.timingMode = SKActionTimingMode.EaseOut
-                other.node.runAction(scaleAction)
-                
-                other.node.runAction(SKAction.sequence([SKAction.waitForDuration(0.6), SKAction.fadeOutWithDuration(0.4)]))
+                self.hitBugEffect(other.node)
                 
             } else if other.categoryBitMask == PhysicsCategory.FireBug {
+                
+                self.runAction(hitFireBugSound)
                 
                 let scaleUp = SKAction.scaleTo(1.2, duration: 0.1)
                 let scaleDown = SKAction.scaleTo(1.0, duration: 0.1)
                 other.node.runAction(SKAction.repeatAction(SKAction.sequence([scaleUp, scaleDown]), count: 5))
+                
+                // EmitterNode on Player
+                let burnEmitterNode = burnPlayer()
+                player.addChild(burnEmitterNode)
+                waitThenRemove(burnEmitterNode, duration: 1.5)
+                
+                // EmitterNode on Firebug
+                let sparkEmitterNode = sparkFireBug()
+                other.node.addChild(sparkEmitterNode)
+                waitThenRemove(sparkEmitterNode, duration: 1.0)
+                
             } else if other.categoryBitMask == PhysicsCategory.Mushroom {
+                self.runAction(hitMushroomSound)
                 self.scaleMushroom(other.node)
             }
             
@@ -462,6 +557,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if other.categoryBitMask & player.physicsBody.collisionBitMask != 0 {
             player.faceCurrentDirection()
             player.defineFacingDirection(player.facingDirection)
+            shakeScreenCollisions()
+            
+            if other.categoryBitMask != PhysicsCategory.Mushroom && other.categoryBitMask != PhysicsCategory.FireBug && other.categoryBitMask != PhysicsCategory.Boundary {
+                
+                let leavesEmmiterNode = dropLeaves()
+                other.node.addChild(leavesEmmiterNode)
+                waitThenRemove(leavesEmmiterNode, duration: 0.5)
+                
+                self.runAction(hitTreeSound)
+            }
+            
+            
         }
     }
    
@@ -484,6 +591,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             self.worldNode.enumerateChildNodesWithName("firebug", usingBlock: {
                 anotherNode, stop in
                 if anotherNode.intersectsNode(node) {
+                    
+                    self.runAction(self.drownFireBugSound)
+                    
                     anotherNode.runAction(SKAction.sequence([SKAction.group([SKAction.rotateByAngle(4 * CGFloat(M_PI_4), duration: 1.0), SKAction.scaleTo(0.0, duration: 1.0)]),SKAction.removeFromParent()]))
                 }
                 })
