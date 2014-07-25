@@ -53,6 +53,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var lastComboTime = CFTimeInterval()
     var comboCounter = Int()
     var bugCount = Int()
+    var tickTockPlaying = Bool()
     
     // Sounds
     var hitMushroomSound = SKAction()
@@ -659,8 +660,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         var target = worldTargetPosition()
         
         var newPosition = worldNode.position
-        newPosition.x += (target.x - worldNode.position.x) * 0.1
-        newPosition.y += (target.y - worldNode.position.y) * 0.1
+        newPosition.x += (target.x - worldNode.position.x) * 0.15
+        newPosition.y += (target.y - worldNode.position.y) * 0.15
         
         worldNode.position = newPosition
     }
@@ -669,6 +670,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         self.currentTime = currentTime
         elapsedTime = currentTime - startTime
+        
+        let timeRemaining = levelTimeLimit - elapsedTime
         
         if gameState == GameState.StartingLevel && !self.paused {
             self.paused = true
@@ -694,8 +697,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         anotherNode.physicsBody.contactTestBitMask = 0
                         anotherNode.physicsBody = nil
                     }
-                    
-                    
                 }
                 })
             })
@@ -707,6 +708,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             endLevelWithSuccess(true)
         } else {
             timerLabel.text = NSString(format: "Time remaining %2.1f", levelTimeLimit - elapsedTime)
+            if timeRemaining < 10 && timeRemaining > 0 && !tickTockPlaying {
+                tickTockPlaying = true
+                self.runAction(clockSound, withKey: "tickTock")
+            }
         }
         
         
