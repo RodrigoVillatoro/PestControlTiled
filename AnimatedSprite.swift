@@ -28,7 +28,6 @@ class AnimatedSprite: SKSpriteNode {
         var textures =  SKTexture[]()
         for i in 1...2 {
             let spriteString = "\(prefix)_\(suffix)\(i)"
-            println(spriteString)
             let sprite = atlas.textureNamed(spriteString)
             sprite.filteringMode = SKTextureFilteringMode.Nearest
             textures.append(sprite)
