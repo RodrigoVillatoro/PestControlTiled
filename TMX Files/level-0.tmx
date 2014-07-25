@@ -64,7 +64,9 @@
   <object x="616" y="497"/>
   <object x="655" y="291"/>
  </objectgroup>
- <objectgroup name="FireBugs" width="30" height="20"/>
+ <objectgroup name="FireBugs" width="30" height="20">
+  <object x="294" y="239"/>
+ </objectgroup>
  <objectgroup name="Player" width="30" height="20">
   <object name="player" x="608" y="352">
    <ellipse/>

@@ -52,6 +52,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var won = Bool()
     var lastComboTime = CFTimeInterval()
     var comboCounter = Int()
+    var bugCount = Int()
     
     // Sounds
     var hitMushroomSound = SKAction()
@@ -64,6 +65,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var drownFireBugSound = SKAction()
     var killBugsSound = SKAction[]()
     var backgroundMusicPlayer = AVAudioPlayer()
+    
+    /*
+    ==========================
+    
+    Init and didMoveToView
+    
+    ==========================
+    */
     
     init(coder aDecoder: NSCoder!) {
         super.init(coder: aDecoder);
@@ -105,13 +114,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         spawnBugs()
         spawnFireBugs()
         createMushrooms()
-        makeBugsWalk()
+        countBugsAndMakeThemWalk()
         loadSounds()
         
         createUserInterface()
         gameState = GameState.StartingLevel
         
     }
+    
+    /*
+    ==========================
+    
+    Sounds
+    
+    ==========================
+    */
     
     func loadSounds() {
         hitMushroomSound = SKAction.playSoundFileNamed("HitWall.mp3", waitForCompletion: false)
@@ -139,7 +156,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         backgroundMusicPlayer.play()
     }
     
-    // Emitter Node Functions
+    /*
+    ==========================
+    
+    Emitter Nodes
+    
+    ==========================
+    */
     
     func dropLeaves() -> SKEmitterNode {
         let leaves = NSKeyedUnarchiver.unarchiveObjectWithFile(NSBundle.mainBundle().pathForResource("TreeSmash", ofType: "sks")) as SKEmitterNode
@@ -168,6 +191,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         emitterNode.runAction(SKAction.sequence([actionWait, actionRemove]))
     }
     
+    /*
+    ==========================
+    
+    Setup
+    
+    ==========================
+    */
+    
     func setupWorld() {
         mapSizeInPixels = CGSizeMake(map.mapSize.width * map.tileSize.width, map.mapSize.height * map.tileSize.height)
         
@@ -177,70 +208,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         map.addChild(bounds)
     }
     
-    func makeBugsWalk() {
+    func countBugsAndMakeThemWalk() {
         worldNode.enumerateChildNodesWithName("bug", usingBlock: {
             node, stop in
             (node as Bugs).walk()
+            ++self.bugCount
             })
         
         worldNode.enumerateChildNodesWithName("firebug", usingBlock: {
             node, stop in
             (node as FireBug).walk()
+            ++self.bugCount
             })
-    }
-    
-    func tileRectFromTileCoords(tileCoords: CGPoint) -> CGRect {
-        let levelHeightInPixels = map.mapSize.height * map.tileSize.height
-        let origin = CGPointMake(tileCoords.x * map.tileSize.width, levelHeightInPixels - ((tileCoords.y + 1) * map.tileSize.height))
-        return CGRectMake(origin.x, origin.y, map.tileSize.width, map.tileSize.height)
-    }
-    
-    func tileGIDAtTileCoord(coord: CGPoint, layer:TMXLayer) -> NSInteger {
-        let layerInfo = layer.layerInfo
-        return NSInteger(layerInfo.tileGidAtCoord(coord))
-    }
-    
-    func sideForCollisionsWithNode(node: SKNode) -> Side {
-        let diff = CGPointSubtract(node.position, player.position)
-        let angle = CGPointToAngle(diff)
-        if angle > -CGFloat(M_PI_4) && angle <= CGFloat(M_PI_4) {
-            return Side.Right
-        } else if angle > CGFloat(M_PI_4) && angle <= 3.0 * CGFloat(M_PI_4) {
-            return Side.Top
-        } else if angle <= -CGFloat(M_PI_4) && angle > -3.0 * CGFloat(M_PI_4) {
-            return Side.Bottom
-        } else {
-            return Side.Left
-        }
-    }
-    
-    func moveMushrooms(node: SKNode, side: Side) {
-        if node.actionForKey("moving") == nil {
-            
-            // first four numbers represent Xs, last four numbers represent Ys
-            let offsets = [4.0, 0.0, -4.0, 0.0, 0.0, 4.0, 0.0, -4.0]
-            
-            let x = side.toRaw()
-            let y = side.toRaw() + 4
-            
-            let oldPositon = node.position
-            var offset = CGPoint(x: CGFloat(offsets[x]), y: CGFloat(offsets[y]))
-            let newPosition = CGPointAdd(node.position, offset)
-            let moveEffect = SKAction.moveTo(newPosition, duration: 0.3)
-            let moveBack = SKAction.moveTo(oldPositon, duration: 0.3)
-            node.runAction(SKAction.sequence([moveEffect, moveBack]), withKey: "moving")
-        }
-    }
-    
-    func scaleMushroom(node: SKNode) {
-        node.xScale = 1.2
-        node.yScale = node.xScale
-        let action = SKAction.scaleTo(1.0, duration: 1.2)
-        action.timingMode = SKActionTimingMode.EaseOut
-        node.runAction(action, withKey: "scaling")
-        
-        let side = sideForCollisionsWithNode(node)
-        self.moveMushrooms(node, side: side)
     }
     
     func worldTargetPosition() -> CGPoint {
@@ -269,6 +248,45 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         return somePosition
         
+    }
+    
+    func createUserInterface() {
+        
+        let startMsg = SKLabelNode(fontNamed: "HelveticaNeue")
+        startMsg.name = "msgLabel"
+        startMsg.text = "Tap screen to run!!"
+        startMsg.fontSize = 32
+        startMsg.position = CGPointMake(self.size.width/2, self.size.height/2)
+        addChild(startMsg)
+        
+        timerLabel = SKLabelNode(fontNamed: "HelveticaNeue")
+        timerLabel.name = "timerLabel"
+        timerLabel.text = "Time remaining \(levelTimeLimit)"
+        timerLabel.fontSize = 18
+        timerLabel.position = CGPointMake(self.size.width - 90, self.size.height - 20)
+        addChild(timerLabel)
+        
+        timerLabel.hidden = true
+        
+    }
+    
+    /*
+    ==========================
+    
+    Tile Map Related
+    
+    ==========================
+    */
+    
+    func tileRectFromTileCoords(tileCoords: CGPoint) -> CGRect {
+        let levelHeightInPixels = map.mapSize.height * map.tileSize.height
+        let origin = CGPointMake(tileCoords.x * map.tileSize.width, levelHeightInPixels - ((tileCoords.y + 1) * map.tileSize.height))
+        return CGRectMake(origin.x, origin.y, map.tileSize.width, map.tileSize.height)
+    }
+    
+    func tileGIDAtTileCoord(coord: CGPoint, layer:TMXLayer) -> NSInteger {
+        let layerInfo = layer.layerInfo
+        return NSInteger(layerInfo.tileGidAtCoord(coord))
     }
     
     // For collision areas with width and height
@@ -364,59 +382,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    func createUserInterface() {
-        
-        let startMsg = SKLabelNode(fontNamed: "HelveticaNeue")
-        startMsg.name = "msgLabel"
-        startMsg.text = "Tap screen to run!!"
-        startMsg.fontSize = 32
-        startMsg.position = CGPointMake(self.size.width/2, self.size.height/2)
-        addChild(startMsg)
-        
-        timerLabel = SKLabelNode(fontNamed: "HelveticaNeue")
-        timerLabel.name = "timerLabel"
-        timerLabel.text = "Time remaining \(levelTimeLimit)"
-        timerLabel.fontSize = 18
-        timerLabel.position = CGPointMake(self.size.width - 90, self.size.height - 20)
-        addChild(timerLabel)
-        
-        timerLabel.hidden = true
-        
-    }
-    
-    func endLevelWithSuccess(won: Bool) {
-        
-        self.won = won
-        
-        let label = self.childNodeWithName("msgLabel") as SKLabelNode
-        
-        label.text = won ? "You win!!!" : "Too slow!!!"
-        label.hidden = false
-        
-        if won {
-            let nextLevel = SKLabelNode(fontNamed: "HelveticaNeue")
-            nextLevel.name = "nextLevelLabel"
-            nextLevel.text = "Next level?"
-            nextLevel.fontSize = 24
-            nextLevel.position = CGPointMake(self.size.width/2, self.size.height/2 - 40)
-            addChild(nextLevel)
-        } else {
-            let tryAgain = SKLabelNode(fontNamed: "HelveticaNeue")
-            tryAgain.name = "playAgain"
-            tryAgain.text = "Try again?"
-            tryAgain.fontSize = 24
-            tryAgain.position = CGPointMake(self.size.width/2, self.size.height/2 - 40)
-            addChild(tryAgain)
-        }
-
-        player.physicsBody.linearDamping = 1
-        gameState = GameState.InLevelMenu
-        
-        backgroundMusicPlayer.pause()
-        self.runAction(won ? winSound : loseSound)
-        
-    }
-    
     // For spawn points (without width and height)
     func spawnBugs() {
         let collisionsGroup = map.groupNamed("Bugs")
@@ -443,46 +408,56 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             worldNode.addChild(bugNode)
         }
     }
-  
-    override func touchesBegan(touches: NSSet, withEvent event: UIEvent!) {
-        
-        for touch : AnyObject in touches {
-            
-            switch gameState! {
-            case .StartingLevel:
-                childNodeWithName("msgLabel").hidden = true
-                gameState = GameState.Playing
-                self.paused = false
-                timerLabel.hidden = false
-                startTime = currentTime
-                player.startTrail()
-                playBackgroundMusic()
-                fallthrough
-            case .Playing:
-                let location = touch.locationInNode(worldNode)
-                player.moveToward(location)
-                player.runAction(playerMoveSound)
-            case .InLevelMenu:
-                if won {
-                    ++level
-                    let newScene = GameScene(size: self.size, level: level)
-                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
-                } else {
-                    let newScene = GameScene(size: self.size, level: level)
-                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
-                }
-            }
+    
+    /*
+    ==========================
+    
+    Handle Collissions
+    
+    ==========================
+    */
+    
+    func sideForCollisionsWithNode(node: SKNode) -> Side {
+        let diff = CGPointSubtract(node.position, player.position)
+        let angle = CGPointToAngle(diff)
+        if angle > -CGFloat(M_PI_4) && angle <= CGFloat(M_PI_4) {
+            return Side.Right
+        } else if angle > CGFloat(M_PI_4) && angle <= 3.0 * CGFloat(M_PI_4) {
+            return Side.Top
+        } else if angle <= -CGFloat(M_PI_4) && angle > -3.0 * CGFloat(M_PI_4) {
+            return Side.Bottom
+        } else {
+            return Side.Left
         }
     }
     
-    override func didSimulatePhysics() {
-        var target = worldTargetPosition()
+    func moveMushrooms(node: SKNode, side: Side) {
+        if node.actionForKey("moving") == nil {
+            
+            // first four numbers represent Xs, last four numbers represent Ys
+            let offsets = [4.0, 0.0, -4.0, 0.0, 0.0, 4.0, 0.0, -4.0]
+            
+            let x = side.toRaw()
+            let y = side.toRaw() + 4
+            
+            let oldPositon = node.position
+            var offset = CGPoint(x: CGFloat(offsets[x]), y: CGFloat(offsets[y]))
+            let newPosition = CGPointAdd(node.position, offset)
+            let moveEffect = SKAction.moveTo(newPosition, duration: 0.3)
+            let moveBack = SKAction.moveTo(oldPositon, duration: 0.3)
+            node.runAction(SKAction.sequence([moveEffect, moveBack]), withKey: "moving")
+        }
+    }
+    
+    func scaleMushroom(node: SKNode) {
+        node.xScale = 1.2
+        node.yScale = node.xScale
+        let action = SKAction.scaleTo(1.0, duration: 1.2)
+        action.timingMode = SKActionTimingMode.EaseOut
+        node.runAction(action, withKey: "scaling")
         
-        var newPosition = worldNode.position
-        newPosition.x += (target.x - worldNode.position.x) * 0.1
-        newPosition.y += (target.y - worldNode.position.y) * 0.1
-        
-        worldNode.position = newPosition
+        let side = sideForCollisionsWithNode(node)
+        self.moveMushrooms(node, side: side)
     }
     
     func shakeScreenCollisions() {
@@ -504,8 +479,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             comboCounter = 0
         }
         lastComboTime = now
-    
+        
+        if someNode.physicsBody != nil {
+            --bugCount
+        }
+        
+        someNode.physicsBody.contactTestBitMask = 0
         someNode.physicsBody = nil
+        println(bugCount)
         
         let upAction = SKAction.moveByX(0.0, y: 30.0, duration: 0.2)
         upAction.timingMode = SKActionTimingMode.EaseOut
@@ -536,7 +517,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let soundNumber = Int(returnMin(CGFloat(11), CGFloat(comboCounter)))
         someNode.runAction(killBugsSound[soundNumber])
         println(soundNumber)
-
+        
     }
     
     func didBeginContact(contact: SKPhysicsContact) {
@@ -601,6 +582,88 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
         }
     }
+    
+    /*
+    ==========================
+    
+    Other Functions
+    
+    ==========================
+    */
+   
+    func endLevelWithSuccess(won: Bool) {
+        
+        self.won = won
+        
+        let label = self.childNodeWithName("msgLabel") as SKLabelNode
+        
+        label.text = won ? "You win!!!" : "Too slow!!!"
+        label.hidden = false
+        
+        if won {
+            let nextLevel = SKLabelNode(fontNamed: "HelveticaNeue")
+            nextLevel.name = "nextLevelLabel"
+            nextLevel.text = "Next level?"
+            nextLevel.fontSize = 24
+            nextLevel.position = CGPointMake(self.size.width/2, self.size.height/2 - 40)
+            addChild(nextLevel)
+        } else {
+            let tryAgain = SKLabelNode(fontNamed: "HelveticaNeue")
+            tryAgain.name = "playAgain"
+            tryAgain.text = "Try again?"
+            tryAgain.fontSize = 24
+            tryAgain.position = CGPointMake(self.size.width/2, self.size.height/2 - 40)
+            addChild(tryAgain)
+        }
+
+        player.physicsBody.linearDamping = 1
+        gameState = GameState.InLevelMenu
+        
+        backgroundMusicPlayer.pause()
+        self.runAction(won ? winSound : loseSound)
+        
+    }
+  
+    override func touchesBegan(touches: NSSet, withEvent event: UIEvent!) {
+        
+        for touch : AnyObject in touches {
+            
+            switch gameState! {
+            case .StartingLevel:
+                childNodeWithName("msgLabel").hidden = true
+                gameState = GameState.Playing
+                self.paused = false
+                timerLabel.hidden = false
+                startTime = currentTime
+                player.startTrail()
+                playBackgroundMusic()
+                fallthrough
+            case .Playing:
+                let location = touch.locationInNode(worldNode)
+                player.moveToward(location)
+                player.runAction(playerMoveSound)
+            case .InLevelMenu:
+                if won {
+                    ++level
+                    let newScene = GameScene(size: self.size, level: level)
+                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
+                } else {
+                    let newScene = GameScene(size: self.size, level: level)
+                    self.view.presentScene(newScene, transition: SKTransition.flipVerticalWithDuration(0.5))
+                }
+            }
+        }
+    }
+    
+    override func didSimulatePhysics() {
+        var target = worldTargetPosition()
+        
+        var newPosition = worldNode.position
+        newPosition.x += (target.x - worldNode.position.x) * 0.1
+        newPosition.y += (target.y - worldNode.position.y) * 0.1
+        
+        worldNode.position = newPosition
+    }
    
     override func update(currentTime: CFTimeInterval) {
         
@@ -625,6 +688,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     self.runAction(self.drownFireBugSound)
                     
                     anotherNode.runAction(SKAction.sequence([SKAction.group([SKAction.rotateByAngle(4 * CGFloat(M_PI_4), duration: 1.0), SKAction.scaleTo(0.0, duration: 1.0)]),SKAction.removeFromParent()]))
+                    
+                    if anotherNode.physicsBody != nil {
+                        --self.bugCount
+                        anotherNode.physicsBody.contactTestBitMask = 0
+                        anotherNode.physicsBody = nil
+                    }
+                    
+                    
                 }
                 })
             })
@@ -632,7 +703,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if elapsedTime >= levelTimeLimit {
             endLevelWithSuccess(false)
             timerLabel.text = "Time remaining 0.0"
-        } else if !worldNode.childNodeWithName("bug") && !worldNode.childNodeWithName("firebug") {
+        } else if bugCount <= 0 {
             endLevelWithSuccess(true)
         } else {
             timerLabel.text = NSString(format: "Time remaining %2.1f", levelTimeLimit - elapsedTime)
